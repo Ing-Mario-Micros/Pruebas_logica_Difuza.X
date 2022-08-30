@@ -28,6 +28,11 @@ void Interrupcion_RS232 (void);
 void MensajeRS232(char *);    //Función para imprimir cadena de Caracteres
 void Transmitir(unsigned char BufferT);
 
+/* Función Para imprimir Numero entero */
+void ImprimirEntero (char); //Función para imprimir valores enteros Hasta 255 en codigo ACCSI
+
+
+
 void ImprimirDecimal (float); //Función para imprimir un valor decimal en el puerto serial
 
 void Codificar_Dato (void); //Función para identificar las directivas enviadas desde dispositivo RS232
@@ -81,6 +86,24 @@ void Transmitir(unsigned char BufferT){
         U2TXREG=BufferT;
         //__delay_us(800);
     
+}
+/* Función Para imprimir Numero entero */
+void ImprimirEntero (char Entero){ //Función para imprimir valores enteros Hasta 255 en codigo ACCSI
+    int i;
+    if(Entero<0){
+        Transmitir('-');
+        Entero=Entero*(-1);
+    }
+    i=10;
+    while(Entero%i != Entero){
+        i=i*10;
+    }
+    i=i/10;
+    while(i>=1){
+        Transmitir((Entero/i)+48);
+        Entero=Entero%i;
+        i=i/10;
+    }
 }
 /*  Funcion para imprimer el numero decimal  */
 void ImprimirDecimal (float An){

@@ -49,7 +49,9 @@ void __attribute__((interrupt,auto_psv)) _T1Interrupt(void);
 
 void __attribute__((interrupt,auto_psv)) _U2RXInterrupt(void);
 /*---------------------------- Logica Difuza ---------------------------*/
-
+unsigned char Ref = 26;
+char error = 0, Derror = 0, error_Ant=0;
+void Obt_Error (void);  //Función encargada de obtener el valor del error y la derivada del error
 /*--------------------------- Variables DHT11 ---------------------------*/
 unsigned char Temp=10,Hum=20,Che,bandera = 0,Leer_DHT =0;
 /*--------------------------- Funciones DHT11 ---------------------------*/
@@ -79,7 +81,15 @@ void main(void) {
     while(1){
         
         MensajeRS232(BufferR2);
+        
         LeerHT11();
+        Obt_Error ();
+        MensajeRS232("Error =");
+        ImprimirEntero(error);
+        Transmitir('\n');
+        MensajeRS232("Derivada del Error =");
+        ImprimirEntero(Derror);
+        Transmitir('\n');
         Transmitir('T');
         Transmitir(Temp/10 + 48);
         Transmitir(Temp%10 + 48);
@@ -88,8 +98,6 @@ void main(void) {
         Transmitir(Hum/10 + 48);
         Transmitir(Hum%10 + 48);
         Transmitir('\n');
-        //_LATD9 = 0;
-        //Transmitir(AUX);
         __delay_ms(1000);
     }
 }
@@ -102,7 +110,11 @@ void __attribute__((interrupt,auto_psv)) _U2RXInterrupt(void){
     Interrupcion_RS232();
 }
 /*---------------------------- Logica Difuza ---------------------------*/
-
+void Obt_Error (void){
+    error=Ref-Temp;
+    Derror=(error - error_Ant);
+    error_Ant=error;
+}
 
 /* -------------------------Funciones DHT11------------------------------ */
 void LeerHT11(void){
