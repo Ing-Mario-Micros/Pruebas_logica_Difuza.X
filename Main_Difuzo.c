@@ -44,12 +44,12 @@
 #define DATA_IN _RB11
 #define DATA_OUT _LATB11
 
+extern char Vector_Datos[];
 /*------------------------- Función de Interrupción Timer 1 ----------------*/
 void __attribute__((interrupt,auto_psv)) _T1Interrupt(void);
 
 void __attribute__((interrupt,auto_psv)) _U2RXInterrupt(void);
 /*---------------------------- Logica Difuza ---------------------------*/
-unsigned char Ref = 26;
 char error = 0, Derror = 0, error_Ant=0;
 void Obt_Error (void);  //Función encargada de obtener el valor del error y la derivada del error
 /*--------------------------- Variables DHT11 ---------------------------*/
@@ -77,12 +77,16 @@ void main(void) {
     __delay_ms(250);
     _LATD9 = 0; //Finalización de configuración LED de reinicio off
     /***------------------- Ciclo Infinito Principal ----------------------***/
+    Vector_Datos[18]=10;
     MensajeRS232("Iniciando Sistema Difuso\n");
     while(1){
         
         MensajeRS232(BufferR2);
         
         LeerHT11();
+        MensajeRS232("Referencia =");
+        ImprimirEntero(Vector_Datos[18]);
+        Transmitir('\n');
         Obt_Error ();
         MensajeRS232("Error =");
         ImprimirEntero(error);
@@ -91,8 +95,7 @@ void main(void) {
         ImprimirEntero(Derror);
         Transmitir('\n');
         Transmitir('T');
-        Transmitir(Temp/10 + 48);
-        Transmitir(Temp%10 + 48);
+        ImprimirEntero(Vector_Datos[28]); //Los valores de temperatura se almacenan en vector de datos posición 28
         Transmitir(' ');
         Transmitir('H');
         Transmitir(Hum/10 + 48);
@@ -111,7 +114,7 @@ void __attribute__((interrupt,auto_psv)) _U2RXInterrupt(void){
 }
 /*---------------------------- Logica Difuza ---------------------------*/
 void Obt_Error (void){
-    error=Ref-Temp;
+    error=Vector_Datos[18]-Vector_Datos[28];
     Derror=(error - error_Ant);
     error_Ant=error;
 }
@@ -160,6 +163,7 @@ void LeerHT11(void){
     Hum=0;
     contador=0;
   }
+  Vector_Datos[28]=Temp;
 }
 unsigned char LeerByte(void){
   unsigned char res=0,i;

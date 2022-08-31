@@ -24,6 +24,9 @@ extern "C" {
 
 void Activar_RS232(void);
 void Interrupcion_RS232 (void);
+/*Algoritmo para Codificar Datos desde el RS232*/
+void Codificar_Dato (void); //Función para identificar las directivas enviadas desde dispositivo RS232
+
 /* Función imprimir Cadena de caracteres */
 void MensajeRS232(char *);    //Función para imprimir cadena de Caracteres
 void Transmitir(unsigned char BufferT);
@@ -35,11 +38,12 @@ void ImprimirEntero (char); //Función para imprimir valores enteros Hasta 255 en
 
 void ImprimirDecimal (float); //Función para imprimir un valor decimal en el puerto serial
 
-void Codificar_Dato (void); //Función para identificar las directivas enviadas desde dispositivo RS232
 char b;
 char BufferR2[Tam_Vec];
 
+/*Variables Temporales*/
 
+char Vector_Datos[33];
 void Activar_RS232(void){
     U2MODE=0x0000;
     U2STA=0x0000;
@@ -66,6 +70,23 @@ void Interrupcion_RS232 (void){
              }
              b=0;
          }
+}
+/*Algoritmo para Codificar Datos desde el RS232*/
+void Codificar_Dato (void){
+    unsigned char Var_Codificada,i, j=1;
+    Var_Codificada=0;
+    j=1;
+    for(i=1;BufferR2[i]!='\n';i++){
+        Var_Codificada=Var_Codificada*j;
+        Var_Codificada=Var_Codificada+(BufferR2[i]-48);
+        j=j*10;
+    }
+    if(BufferR2[1]==47){
+        //Transmitir_VDatos
+    }
+    else{
+        Vector_Datos[BufferR2[0]-34]=Var_Codificada;
+    }
 }
 void MensajeRS232(char* a){
 //Función que escribe una cadena de caracteres variable en la pantalla
@@ -139,20 +160,6 @@ void ImprimirDecimal (float An){
         i=i/10;
     }
     Transmitir(' ');
-}
-void Codificar_Dato (void){
-    unsigned char Var_Codificada,i, j=1;
-    for(i=1;BufferR2[i]!='\n';i++){
-        Var_Codificada=Var_Codificada*j;
-        Var_Codificada=Var_Codificada+(BufferR2[i]-48);
-        j=j*10;
-    }
-    if(BufferR2[1]==47){
-        //Transmitir_VDatos
-    }
-    else{
-        //Vector_Datos[BufferR2[0]-34]=Var_Codificada;
-    }
 }
 #endif	/* RS232_H */
 
