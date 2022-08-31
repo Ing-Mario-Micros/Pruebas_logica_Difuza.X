@@ -11,6 +11,7 @@
 #include <libpic30.h>
 #include "RS232.h"
 #include "Timers.h"
+#include "DHT11.h"
 
 
 
@@ -40,9 +41,9 @@
 #define LED_CPU _RD3
 
 // Pines del DHT
-#define DATA_DIR _TRISB11
-#define DATA_IN _RB11
-#define DATA_OUT _LATB11
+//#define DATA_DIR _TRISB11
+//#define DATA_IN _RB11
+//#define DATA_OUT _LATB11
 
 extern char Vector_Datos[];
 /*------------------------- Función de Interrupción Timer 1 ----------------*/
@@ -53,12 +54,10 @@ void __attribute__((interrupt,auto_psv)) _U2RXInterrupt(void);
 char error = 0, Derror = 0, error_Ant=0;
 void Obt_Error (void);  //Función encargada de obtener el valor del error y la derivada del error
 /*--------------------------- Variables DHT11 ---------------------------*/
-unsigned char Temp=10,Hum=20,Che,bandera = 0,Leer_DHT =0;
-/*--------------------------- Funciones DHT11 ---------------------------*/
-void LeerHT11(void);
-unsigned char LeerByte(void);
-unsigned char LeerBit(void);
-unsigned char Check();
+extern unsigned char Temp,Hum,Che,bandera;
+
+
+
 
 void main(void) {
     /*------------------ Configuración de Pines Digital --------------------*/
@@ -70,14 +69,12 @@ void main(void) {
     /*------------------ Configuración de RS232 ---------------------------*/
     Activar_RS232(); //Función de activación del Modulo RS232 Incluidas las interrupciones de Recepción
     /*------------------ Configuracion DHT11 ------------------------------*/
-    ADPCFG=0xFFFF;    // Del Analogo 8 al 15 como Pin Digital
-    DATA_OUT=0;       // Inicializar pin de salida en cero
-    DATA_DIR=1;       // Definir el puerto como Entrada
+    Configurar_DHT11_1();
     /*-------------------- Sistema detecta Reinicios ------------------------*/
     __delay_ms(250);
     _LATD9 = 0; //Finalización de configuración LED de reinicio off
     /***------------------- Ciclo Infinito Principal ----------------------***/
-    Vector_Datos[18]=10;
+    
     MensajeRS232("Iniciando Sistema Difuso\n");
     while(1){
         
@@ -96,7 +93,6 @@ void main(void) {
         Transmitir('\n');
         Transmitir('T');
         ImprimirEntero(Vector_Datos[28]); //Los valores de temperatura se almacenan en vector de datos posición 28
-        Transmitir(' ');
         Transmitir('H');
         Transmitir(Hum/10 + 48);
         Transmitir(Hum%10 + 48);
@@ -119,82 +115,8 @@ void Obt_Error (void){
     error_Ant=error;
 }
 
-/* -------------------------Funciones DHT11------------------------------ */
-void LeerHT11(void){
-  unsigned char i,contr=0;
-  unsigned char repetir=0;
-  unsigned char contador=0;
-  bandera=0;
-  TMR1=0;
-  do{
-      /*------------- Condición De Start Inicio -----------------*/
-    DATA_DIR=0;
-    DATA_OUT=0;
-    __delay_ms(18);
-    DATA_DIR=1;
-    while(DATA_IN==1){
-      if(bandera==1) break;  
-    }
-    __delay_us(40);
-    if(DATA_IN==0) contr++;
-    __delay_us(80);
-    if(DATA_IN==1) contr++;
-    //__delay_us(120);
-    while(DATA_IN==1){
-      if(bandera==1) break;  
-    }
-     /*---------------- Condición de Start Final ----------------*/
-    Hum=LeerByte();
-    LeerByte();
-    Temp=LeerByte();
-    LeerByte();
-    Che=LeerByte();
-    if(bandera==1){
-      repetir=1;
-      bandera=0;
-      contador++;
-      TMR1=0;
-    }
-  }while(repetir==1 && contador<6);
-  
-  repetir=0;
-  if(contador==6){
-    Temp=0;
-    Hum=0;
-    contador=0;
-  }
-  Vector_Datos[28]=Temp;
-}
-unsigned char LeerByte(void){
-  unsigned char res=0,i;
-  
-  for(i=8;i>0;i--){
-    res=(res<<1) | LeerBit();  
-  }
-  return res;
-}
-unsigned char LeerBit(void){
-    unsigned char res=0;
-     while(DATA_IN==0){
-       if(bandera==1) break;  
-     }
-     __delay_us(13);
-     if(DATA_IN==1) res=0;
-     __delay_us(22);
-     if(DATA_IN==1){
-       res=1;
-       while(DATA_IN==1){
-         if(bandera==1) break;  
-       }
-     }  
-     return res;  
-}
-unsigned char Check(void){
-  unsigned char res=0,aux;
-  aux=Temp+Hum;
-  if(aux==Che) res=1;
-  return res;  
-}
+
+
 
 
 
