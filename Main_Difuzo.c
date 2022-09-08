@@ -53,21 +53,10 @@ void __attribute__((interrupt,auto_psv)) _U2RXInterrupt(void);
 /*---------------------------- Logica Difuza ---------------------------*/
 char error = 0, Derror = 0, error_Ant=0;
 void Obt_Error (void);  //Función encargada de obtener el valor del error y la derivada del error
-void Fuzzificacion(char error);
-void AnalisisReglas(void);
-float Defuzzificacion(void);
-float SetFrio(unsigned char);
-float SetTibio(unsigned char);
-float SetCaliente(unsigned char);
 
-float uf,ut,uc,r1,r2,r3,sal;
-//uf:grado de pertenencia a frio
-//ut: grado de pertenencia a tibio
-//uc: grado de pertenencia a caliente
-//r1: activación de la regla1
-//r2: activación de la regla2
-//r3: activación de la regla3
-//sal: salida de la defuzzificación
+
+
+
 
 /*--------------------------- Variables DHT11 ---------------------------*/
 extern unsigned char Temp,Hum,Che,bandera;
@@ -114,12 +103,7 @@ void main(void) {
         Transmitir(Hum%10 + 48);
         Transmitir('\n');
         
-        //se fuzzifica el valor de la temperatura para hallar los grados de pertenencia
-        Fuzzificacion(error);
-        //se calcula el valor de activación de cada regla
-        AnalisisReglas();
-        //se calcula el valor de salida por el metodo de momento medio MOM
-        sal=Defuzzificacion();
+        
         __delay_ms(1000);
     }
 }
@@ -137,73 +121,9 @@ void Obt_Error (void){
     Derror=(error - error_Ant);
     error_Ant=error;
 }
-float SetFrio(unsigned char Temp){
-  //Función que determina el grado de pertenencia al conjunto frio
-  float grado;
-  if(Temp<12){
-    grado=1;    
-  }else if(Temp<20){
-    grado=2.5-(Temp*1.0)/8;  
-  }else{
-    grado=0;  
-  }
-  return grado;    
-}
-float SetTibio(unsigned char Temp){
-  //Función que determina el grado de pertenencia al conjunto tibio
-  float grado;
-  if(Temp<12){
-    grado=0;    
-  }else if(Temp<20){
-    grado=((Temp*1.0)/8)-1.5;  
-  }else if(Temp<28){
-    grado=3.5-(Temp*1.0)/8;  
-  }else{
-    grado=0;  
-  }
-  return grado;    
-}
-float SetCaliente(unsigned char Temp){
-  //Función que determina el grado de pertenencia al conjunto caliente
-  float grado;
-  if(Temp<20){
-    grado=0;    
-  }else if(Temp<28){
-    grado=((Temp*1.0)/8)-2.5;  
-  }else{
-    grado=1;  
-  }
-  return grado;    
-}
-void Fuzzificacion(char error){
-  //Función que concentra el calculo de los grados de pertenencia
-  uf=SetFrio(error);
-  ut=SetTibio(error);
-  uc=SetCaliente(error);
-}
-void AnalisisReglas(void){
-  //Función que calcula el valor de activación de las reglas
-  r1=0;
-  r2=0;
-  r3=0;  
-  if(uf>0)
-    r1=uf;
-  if(ut>0)
-    r2=ut;
-  if(uc>0)
-    r3=uc;  
-}
-float Defuzzificacion(void){
-  //Función que calcula el valor de salida apartir de los centroides de los conjuntos de salida
-  float sal=0;
-  if(r1>0)
-    sal=sal+0.175*r1;
-  if(r2>0)
-    sal=sal+0.5*r2;
-  if(r3>0)
-    sal=sal+0.825*r3;
-  return sal;  
-}
+
+
+
 
 
 
