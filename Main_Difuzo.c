@@ -7,11 +7,12 @@
 
 #include <xc.h>
 //Fosc = 7.37MHz Por Defecto
+//Fosc = 20 MHz Configurado mediante cristal
 #define FCY 5000000
-#include <libpic30.h>
-#include "RS232.h"
-#include "Timers.h"
-#include "DHT11.h"
+#include <libpic30.h> //Libreria necesaria para el uso de los retardos en el micro
+#include "RS232.h"  //Libreria para el uso de comucicación RS232
+#include "Timers.h" //Libreria encargada de administrar los Timers
+#include "DHT11.h"  //Función encargada de la lectura del DHT11
 
 
 
@@ -54,8 +55,25 @@ void __attribute__((interrupt,auto_psv)) _U2RXInterrupt(void);
 char error = 0, Derror = 0, error_Ant=0;
 void Obt_Error (void);  //Función encargada de obtener el valor del error y la derivada del error
 
+void Fuzzificacion(char Error);
 
+float SetErrorNegativoMayor(char);
+float SetErrorNegativoMenor(char);
+float SetErrorZero(char);
+float SetErrorPositivoMenor(char);
+float SetErrorPositivoMayor(char);
 
+float uenM,uenm,uez,uepm,uepM,r1,r2,r3,sal;
+//uenm: grado de pertenecia del conjunto error negativo Mayor
+//uenM: grado de pertenecia del conjunto error negativo menor
+//uez: grado de pertenecia del conjunto error cero
+//uepm: grado de pertenecia del conjunto error positivo menor
+//uepM: grado de pertenecia del conjunto error positivo mayor
+
+//r1: activación de la regla1
+//r2: activación de la regla2
+//r3: activación de la regla3
+//sal: salida de la defuzzificación
 
 
 /*--------------------------- Variables DHT11 ---------------------------*/
@@ -103,7 +121,28 @@ void main(void) {
         Transmitir(Hum%10 + 48);
         Transmitir('\n');
         
+        MensajeRS232("Pertenencia negativo Mayor =");
+        ImprimirDecimal(uenM);
+        Transmitir('\n');
         
+        MensajeRS232("Pertenencia negativo menor =");
+        ImprimirDecimal(uenm);
+        Transmitir('\n');
+        
+        MensajeRS232("Pertenencia cero =");
+        ImprimirDecimal(uez);
+        Transmitir('\n');
+        
+        MensajeRS232("Pertenencia positivo menor =");
+        ImprimirDecimal(uepm);
+        Transmitir('\n');
+        
+        MensajeRS232("Pertenencia positivo Mayor =");
+        ImprimirDecimal(uepM);
+        Transmitir('\n');
+        /*------------------------- Logica Difuza -------------------------*/
+        //se fuzzifica el valor de la temperatura para hallar los grados de pertenencia
+        Fuzzificacion(error);
         __delay_ms(1000);
     }
 }
@@ -122,7 +161,81 @@ void Obt_Error (void){
     error_Ant=error;
 }
 
-
+void Fuzzificacion(char Error){
+  //Función que concentra el calculo de los grados de pertenencia
+  uenM=SetErrorNegativoMayor(Error);
+  uenm=SetErrorNegativoMenor(Error);
+  uez=SetErrorZero(Error);
+  uepm=SetErrorPositivoMenor(Error);
+  uepM=SetErrorPositivoMayor(Error);
+  
+}
+float SetErrorNegativoMayor(char Error){
+    //Función que determina el grado de pertenencia al conjunto de error negativo Mayor
+    float grado;
+    if(Error<-3){
+      grado=1;    
+    }else if(Error<-1){
+      grado=(-0.5*Error)-0.5;  
+    }else{
+      grado=0;  
+    }
+    return grado; 
+}
+float SetErrorNegativoMenor(char Error){
+    //Función que determina el grado de pertenencia al conjunto de error negativo menor
+    float grado;
+    if(Error<-3){
+        grado=0;    
+    }else if(Error<-1){
+        grado=(0.5*Error)+1.5;  
+    }else if(Error<0){
+        grado=(-1*Error)+0;  
+    }else{
+        grado=0;  
+    }
+    return grado; 
+}
+float SetErrorZero(char Error){
+    //Función que determina el grado de pertenencia al conjunto de error cero
+    float grado;
+    if(Error<-1){
+        grado=0;    
+    }else if(Error<0){
+        grado=(1*Error)+1;  
+    }else if(Error<1){
+        grado=(-1*Error)+1;  
+    }else{
+        grado=0;  
+    }
+    return grado; 
+}
+float SetErrorPositivoMenor(char Error){
+    //Función que determina el grado de pertenencia al conjunto de error positivo menor
+    float grado;
+    if(Error<0){
+        grado=0;    
+    }else if(Error<1){
+        grado=(1*Error)+0;  
+    }else if(Error<3){
+        grado=(-0.5*Error)+1.5;  
+    }else{
+        grado=0;  
+    }
+    return grado;  
+}
+float SetErrorPositivoMayor(char Error){
+    //Función que determina el grado de pertenencia al conjunto de error positivo Mayor
+    float grado;
+    if(Error<1){
+      grado=0;    
+    }else if(Error<3){
+      grado=(0.5*Error)-0.5;  
+    }else{
+      grado=1;  
+    }
+    return grado; 
+}
 
 
 
