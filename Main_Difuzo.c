@@ -41,6 +41,7 @@
 
 #define LED_CPU _RD3
 
+
 // Pines del DHT
 //#define DATA_DIR _TRISB11
 //#define DATA_IN _RB11
@@ -135,8 +136,7 @@ void main(void) {
     while(1){
         
         MensajeRS232(BufferR2);
-        
-        LeerHT11();
+        Promediar_Sensores();
         MensajeRS232("Referencia =");
         ImprimirEntero(Vector_Datos[18]);
         Transmitir('\n');
