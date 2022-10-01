@@ -95,8 +95,9 @@ float uenM,uenm,uez,uepm,uepM,udenM,udenm,udez,udepm,udepM,
 //r4: activación de la regla4
 //r5: activación de la regla5
 //sal: salida de la defuzzificación
-
-
+/*------------------------- Variables PWM --------------------------------*/
+void Por_PWM (float);
+char Valvula;
 /*--------------------------- Variables DHT11 ---------------------------*/
 extern unsigned char Temp,Hum,Che,bandera;
 
@@ -114,6 +115,17 @@ void main(void) {
     Activar_RS232(); //Función de activación del Modulo RS232 Incluidas las interrupciones de Recepción
     /*------------------ Configuracion DHT11 ------------------------------*/
     Configurar_DHT11_1();
+    
+    /*------------------- Configuración de PWM -----------------------------*/
+    PR2=1249;
+    TMR2=0;
+    _T2IF=0;
+    T2CON= 0x0000;
+    OC1R=0;
+    OC1RS=200;
+    OC1CON= 0x0000;
+    _OCM=0b110;
+    T2CON= T2CON|0x8000;
     /*-------------------- Sistema detecta Reinicios ------------------------*/
     __delay_ms(250);
     _LATD9 = 0; //Finalización de configuración LED de reinicio off
@@ -174,7 +186,8 @@ void main(void) {
         MensajeRS232("Valor de salida =");
         ImprimirDecimal(sal);
         Transmitir('\n');
-        __delay_ms(1000);
+        Por_PWM (sal/100);
+        __delay_ms(2000);
     }
 }
 void __attribute__((interrupt,auto_psv)) _T1Interrupt(void){
@@ -185,10 +198,30 @@ void __attribute__((interrupt,auto_psv)) _T1Interrupt(void){
 void __attribute__((interrupt,auto_psv)) _U2RXInterrupt(void){
     Interrupcion_RS232();
 }
+/*----------------------------- Funciones de PWM ---------------------------*/
+void Por_PWM (float PPWM){
+    //char aux=0
+    //aux =(PPWM*1842);
+    if(PPWM<0){
+            PPWM=PPWM*(-1);
+            Valvula=0;
+    }
+    else{
+        Valvula=1;
+    }
+    ImprimirDecimal (PPWM);
+    //OC1RS=8,0202*PPWM + 446,98;
+    OC1RS = (int)( ((769+1)*PPWM)+480 );
+    if(PPWM==0.0){
+        OC1RS = 0;
+    }
+    //OC1RS = 480;
+}
+
 /*---------------------------- Logica Difuza ---------------------------*/
 void Obt_Error (void){
     error=Vector_Datos[18]-Vector_Datos[28];
-    Derror=(error - error_Ant);
+    Derror=(error - error_Ant)/2;
     error_Ant=error;
 }
 
@@ -403,26 +436,28 @@ float Defuzzificacion(void){
   //Función que calcula el valor de salida apartir de los centroides de los conjuntos de salida
   float sal=0,aux;
   //Conjunto de salida pwm negativo Mayor
-  if(r1>0 || r6>0 || r25>0)
-    sal=sal+(-97.5*Maximo(r1,r6,r25));
+  if(r1>0 || r2>0|| r3>0|| r6>0){
+    aux=Maximo(r1,r2,r3);  
+    sal=sal+(-99.5*Maximo(aux,r6,0));
+  }
   //Conjunto de salida pwm negativo Menor
-  if(r2>0 || r3>0 || r8>0 || r11>0){
-    aux=Maximo(r2,r3,r8);
-    sal=sal+(-50*Maximo(aux,r11,0));
+  if(r7>0 || r8>0 ||r11>0){
+    sal=sal+(-50*Maximo(r7,r8,r11));
   }
   //Conjunto de salida pwm zero
-  if(r4>0 || r5>0 || r7>0 || r9>0|| r10>0 ||r12>0 ||r13>0 || r14>0|| r16>0|| r17>0
-          || r19>0|| r21>0 || r22>0){
+  if(r4>0 || r5>0 || r9>0|| r10>0 ||r12>0 ||r13>0 || r14>0|| r16>0|| r17>0
+          || r21>0 || r22>0){
     sal=sal+0;
   }
   //Conjunto de salida pwm positivo Menor
-  if(r15>0 || r18>0 || r20>0 || r23>0 || r24>0){
-    aux=Maximo(r15,r18,r20);
-    sal=sal+50*Maximo(aux,r23,r24);
+  if(r15>0 || r18>0 || r19>0 ){
+    sal=sal+50*Maximo(r15,r18,r19);
   }
   //Conjunto de salida pwm positivo Mayor
-  if(r25>0)
-    sal=sal+97.5*Maximo(r25,0,0);
+  if(r20>0 ||r23>0 || r24>0|| r25>0){
+    aux=Maximo(r20,r23,r24);
+    sal=sal+99.5*Maximo(aux,r25,0);
+  }
   
   return sal;  
 }
