@@ -7,6 +7,7 @@
       <itemPath>RS232.h</itemPath>
       <itemPath>Timers.h</itemPath>
       <itemPath>DHT11.h</itemPath>
+      <itemPath>S_Difuso.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
